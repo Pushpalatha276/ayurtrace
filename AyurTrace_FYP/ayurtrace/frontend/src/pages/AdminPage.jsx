@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { QRCodeCanvas } from "qrcode.react";
+import QRCode from "qrcode";
 export default function AdminPage() {
   const { authFetch } = useAuth()
   const [stats, setStats] = useState(null)
