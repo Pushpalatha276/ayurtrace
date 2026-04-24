@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AyurTrace — Complete Setup Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --forest: #1a3c2b; --moss: #2d6a4f; --sage: #74c69d; --pale: #d8f3dc;
+    --cream: #faf7f2; --gold: #c9a84c; --ink: #1e1e1e; --muted: #6b7280;
+    --red: #dc2626; --blue: #2563eb; --orange: #d97706;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sora', sans-serif; background: var(--cream); color: var(--ink); }
+
+  .hero { background: var(--forest); padding: 32px 24px 24px; }
+  .hero h1 { font-size: 26px; font-weight: 800; color: #fff; }
+  .hero h1 em { color: var(--gold); font-style: normal; }
+  .hero p { color: var(--sage); font-size: 13px; margin-top: 5px; }
+  .progress-bar { background: rgba(255,255,255,.12); border-radius: 99px; height: 8px; margin-top: 18px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--gold); border-radius: 99px; transition: width .4s ease; }
+  .progress-label { color: var(--sage); font-size: 12px; margin-top: 5px; font-family: 'JetBrains Mono', monospace; }
+
+  .phase-tabs { background: #0f2419; display: flex; overflow-x: auto; }
+  .phase-tab { background: none; border: none; color: rgba(255,255,255,.4); font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 600; padding: 11px 14px; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; transition: all .2s; text-transform: uppercase; letter-spacing: .5px; }
+  .phase-tab:hover { color: rgba(255,255,255,.7); }
+  .phase-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  .layout { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 130px); }
+  @media(max-width:768px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  .sidebar { background: #fff; border-right: 1px solid #e8e4dc; padding: 16px 0; position: sticky; top: 0; height: calc(100vh - 130px); overflow-y: auto; }
+  .sidebar-step { display: flex; align-items: center; gap: 9px; padding: 9px 14px; cursor: pointer; transition: background .15s; border-left: 3px solid transparent; }
+  .sidebar-step:hover { background: var(--pale); }
+  .sidebar-step.active { background: #f0fdf4; border-left-color: var(--moss); }
+  .sidebar-step.done .step-circle { background: var(--moss); color: #fff; }
+  .step-circle { width: 24px; height: 24px; border-radius: 50%; background: #e5e7eb; color: var(--muted); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sidebar-step.active .step-circle { background: var(--forest); color: var(--gold); }
+  .step-text { font-size: 11.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+  .step-sub  { font-size: 10px; color: var(--muted); }
+
+  .main { padding: 24px 28px; max-width: 760px; }
+  @media(max-width:768px) { .main { padding: 18px 14px; } }
+
+  .phase-panel { display: none; }
+  .phase-panel.active { display: block; }
+
+  .step-section { margin-bottom: 32px; scroll-margin-top: 20px; border-radius: 12px; padding: 20px; border: 1px solid #e8e4dc; background: #fff; }
+  .step-section.done { background: #f0fdf4; border-color: #86efac; }
+
+  .step-header { display: flex; align-items: center; gap: 11px; margin-bottom: 12px; }
+  .step-num { width: 34px; height: 34px; border-radius: 50%; background: var(--forest); color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-section.done .step-num { background: #16a34a; color: #fff; }
+  .step-title { font-size: 17px; font-weight: 700; color: var(--forest); }
+  .step-desc  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .mark-done-btn { margin-top: 12px; background: var(--forest); color: var(--gold); border: none; padding: 7px 16px; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .2s; }
+  .mark-done-btn:hover { background: var(--moss); }
+  .step-section.done .mark-done-btn { background: #16a34a; }
+
+  .info-box { background: #eff6ff; border-left: 3px solid var(--blue); border-radius: 0 8px 8px 0; padding: 10px 13px; font-size: 13px; color: #1e40af; margin: 10px 0; line-height: 1.6; }
+  .warn-box  { background: #fffbeb; border-left: 3px solid var(--orange); border-radius: 0 8px 8px 0; padding: 10px 13px; font-size: 13px; color: #92400e; margin: 10px 0; line-height: 1.6; }
+  .tip-box   { background: var(--pale); border-left: 3px solid var(--moss); border-radius: 0 8px 8px 0; padding: 10px 13px; font-size: 13px; color: var(--moss); margin: 10px 0; line-height: 1.6; }
+
+  pre { background: #0f2419; color: #a3e7c5; border-radius: 10px; padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.7; overflow-x: auto; margin: 10px 0; position: relative; }
+  .copy-btn { position: absolute; top: 9px; right: 9px; background: rgba(255,255,255,.1); border: none; color: #a3e7c5; border-radius: 4px; padding: 3px 9px; font-size: 10px; cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: background .2s; }
+  .copy-btn:hover { background: rgba(255,255,255,.2); }
+  .copy-btn.copied { background: var(--gold); color: var(--forest); }
+  .cmd-comment { color: #4ade80; opacity: .55; }
+  .cmd-hl { color: var(--gold); }
+
+  ol, ul { padding-left: 18px; font-size: 13px; line-height: 1.9; color: #444; }
+  ol li, ul li { margin-bottom: 2px; }
+  ol li strong, ul li strong { color: var(--forest); }
+  h3 { font-size: 14px; font-weight: 700; color: var(--forest); margin: 14px 0 6px; }
+  p  { font-size: 13px; line-height: 1.7; color: #444; margin-bottom: 7px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+  @media(max-width:500px) { .grid2 { grid-template-columns: 1fr; } }
+  .mini-card { background: var(--cream); border: 1px solid #e8e4dc; border-radius: 8px; padding: 12px; font-size: 12.5px; }
+  .mini-card .mc-icon { font-size: 20px; margin-bottom: 5px; }
+  .mini-card .mc-title { font-weight: 700; color: var(--forest); margin-bottom: 2px; }
+  .mini-card .mc-sub { color: var(--muted); font-size: 11px; }
+  .mc-env { margin-top:5px; background:#0f2419; color:#a3e7c5; padding:4px 7px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:10px; }
+
+  .terminal-split { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 10px 0; }
+  @media(max-width:600px){ .terminal-split { grid-template-columns: 1fr; } }
+  .terminal-box { background: #0f2419; border-radius: 8px; padding: 11px; }
+  .terminal-title { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 9px; margin-bottom: 7px; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,.1); padding-bottom: 5px; }
+  .terminal-body  { color: #a3e7c5; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.6; }
+
+  .nav-btns { display: flex; gap: 10px; margin-top: 18px; }
+  .nav-btn { padding: 9px 20px; border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 12.5px; font-weight: 700; cursor: pointer; border: none; transition: all .2s; }
+  .nav-next { background: var(--forest); color: var(--gold); }
+  .nav-next:hover { background: var(--moss); }
+  .nav-prev { background: #fff; color: var(--forest); border: 1px solid #e8e4dc; }
+  .nav-prev:hover { background: var(--pale); }
+
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 10px; font-weight: 700; margin-left: 5px; }
+  .badge-req  { background: #fee2e2; color: var(--red); }
+  .badge-opt  { background: #f3f4f6; color: var(--muted); }
+
+  table { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; }
+  th { background:var(--forest); color:var(--gold); padding:8px 11px; text-align:left; }
+  td { padding:8px 11px; border-bottom:1px solid #e8e4dc; }
+  tr:nth-child(even) td { background:#fafaf8; }
+  code { background:#f3f4f6; padding:1px 5px; border-radius:3px; font-family:'JetBrains Mono',monospace; font-size:11px; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <span style="font-size:26px">🌿</span>
+    <h1>AyurTrace — <em>Complete Setup Guide</em></h1>
+  </div>
+  <p>Follow every step in order. Check each one off as you complete it.</p>
+  <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+  <div class="progress-label" id="progress-label">0 of 18 steps completed</div>
+</div>
+
+<div class="phase-tabs">
+  <button class="phase-tab active" onclick="showPhase(0,this)">① Prerequisites</button>
+  <button class="phase-tab" onclick="showPhase(1,this)">② Supabase</button>
+  <button class="phase-tab" onclick="showPhase(2,this)">③ Alchemy</button>
+  <button class="phase-tab" onclick="showPhase(3,this)">④ MetaMask</button>
+  <button class="phase-tab" onclick="showPhase(4,this)">⑤ Install & .env</button>
+  <button class="phase-tab" onclick="showPhase(5,this)">⑥ Smart Contract</button>
+  <button class="phase-tab" onclick="showPhase(6,this)">⑦ Run Locally</button>
+  <button class="phase-tab" onclick="showPhase(7,this)">⑧ Test the App</button>
+  <button class="phase-tab" onclick="showPhase(8,this)">⑨ Deploy Live</button>
+</div>
+
+<div class="layout">
+<div class="sidebar" id="sidebar"></div>
+<div class="main">
+
+<!-- ═══════════════════════════════════════════
+     PHASE 0 — PREREQUISITES
+════════════════════════════════════════════ -->
+<div class="phase-panel active" id="phase-0">
+
+  <div class="step-section" id="step-0">
+    <div class="step-header"><div class="step-num">1</div><div>
+      <div class="step-title">Install Node.js <span class="badge badge-req">Required</span></div>
+      <div class="step-desc">JavaScript runtime — needed for everything</div>
+    </div></div>
+    <div class="info-box">First check if you already have it. Open terminal and run: <code>node --version</code><br>If it shows <strong>v18+</strong>, skip to step 2.</div>
+    <ol>
+      <li>Go to <strong>nodejs.org</strong> → download the <strong>LTS version</strong> (green button)</li>
+      <li>Run installer → keep all defaults → click Next → Install</li>
+      <li>Close and reopen your terminal</li>
+    </ol>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmd-comment"># Verify — should show v18+ and 9+</span>
+node --version
+npm --version</pre>
+    <button class="mark-done-btn" onclick="markDone(0)">✓ Mark as Done</button>
+  </div>
+
+  <div class="step-section" id="step-1">
+    <div class="step-header"><div class="step-num">2</div><div>
+      <div class="step-title">Install Git <span class="badge badge-req">Required</span></div>
+      <div class="step-desc">Version control — needed to push to GitHub</div>
+    </div></div>
+    <ol>
+      <li>Go to <strong>git-scm.com</strong> → Download for your OS → Install with defaults</li>
+    </ol>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button>git --version   <span class="cmd-comment"># should show git version 2.x.x</span></pre>
+    <button class="mark-done-btn" onclick="markDone(1)">✓ Mark as Done</button>
+  </div>
+
+  <div class="step-section" id="step-2">
+    <div class="step-header"><div class="step-num">3</div><div>
+      <div class="step-title">Install VS Code <span class="badge badge-opt">Recommended</span></div>
+      <div class="step-desc">Best editor for this project</div>
+    </div></div>
+    <ol>
+      <li>Go to <strong>code.visualstudio.com</strong> → Download → Install</li>
+      <li>Open VS Code → <strong>File → Open Folder</strong> → select your <code>ayurtrace</code> folder</li>
+      <li>Press <strong>Ctrl+`</strong> (backtick) to open the built-in terminal</li>
+    </ol>
+    <button class="mark-done-btn" onclick="markDone(2)">✓ Mark as Done</button>
+  </div>
+
+  <div class="step-section" id="step-3">
+    <div class="step-header"><div class="step-num">4</div><div>
+      <div class="step-title">Extract the Project Zip <span class="badge badge-req">Required</span></div>
+      <div class="step-desc">Unzip AyurTrace_FYP.zip to a local folder</div>
+    </div></div>
+    <ol>
+      <li>Find <strong>AyurTrace_FYP.zip</strong> you downloaded</li>
+      <li>Right-click → <strong>Extract All</strong> → choose a location like <code>C:\Projects\</code> or <code>~/Projects/</code></li>
+      <li>You now have an <code>ayurtrace/</code> folder with 3 subfolders</li>
+    </ol>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button>ayurtrace/
+  ├── blockchain/    <span class="cmd-comment"># Smart contracts (Solidity)</span>
+  ├── backend/       <span class="cmd-comment"># API server (Node.js)</span>
+  └── frontend/      <span class="cmd-comment"># React web app</span></pre>
+    <div class="warn-box">⚠️ Keep on your local disk. Do NOT put in a network drive or OneDrive folder — this causes npm install issues.</div>
+    <button class="mark-done-btn" onclick="markDone(3)">✓ Mark as Done</button>
+  </div>
+
+  <div class="nav-btns">
+    <button class="nav-btn nav-next" onclick="showPhase(1,document.querySelectorAll('.phase-tab')[1])">Next: Supabase →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PHASE 1 — SUPABASE
+════════════════════════════════════════════ -->
+<div class="phase-panel" id="phase-1">
+
+  <div class="step-section" id="step-4">
+    <div class="step-header"><div class="step-num">5</div><div>
+      <div class="step-title">Create Supabase Account & Project</div>
+      <div class="step-desc">Free PostgreSQL database — stores batches, users, events</div>
+    </div></div>
+    <div class="info-box">🔗 Go to: <strong>supabase.com</strong> → "Start your project" → Sign up with GitHub</div>
+    <ol>
+      <li>After signup, click <strong>"New Project"</strong></li>
+      <li>Fill in: Name = <code>ayurtrace</code>, create a database password, pick nearest region</li>
+      <li>Click <strong>"Create new project"</strong> → wait ~2 minutes for it to load</li>
+    </ol>
+    <div class="tip-box">✅ When you see the Supabase dashboard (with Table Editor, SQL Editor etc.) — it's ready.</div>
+    <button class="mark-done-btn" onclick="markDone(4)">✓ Mark as Done</button>
+  </div>
+
+  <div class="step-section" id="step-5">
+    <div class="step-header"><div class="step-num">6</div><div>
+      <div class="step-title">Create Database Tables (run SQL)</div>
+      <div class="step-desc">Creates users, batches, events tables</div>
+    </div></div>
+    <ol>
+      <li>In Supabase left sidebar → click <strong>SQL Editor</strong></li>
+      <li>Click <strong>"New query"</strong></li>
+      <li>Paste the SQL below → click <strong>"Run"</strong> (or Ctrl+Enter)</li>
+    </ol>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button>CREATE TABLE users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  wallet_address TEXT UNIQUE NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('collector','aggregator','processor','manufacturer','admin')),
+  name TEXT, location TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE batches (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  batch_id TEXT UNIQUE NOT NULL,
+  herb_name TEXT NOT NULL,
+  herb_latin TEXT, quantity_kg DECIMAL,
+  status TEXT DEFAULT 'collected',
+  current_node TEXT DEFAULT 'collector',
+  tx_hash TEXT, qr_code TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE events (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  batch_id TEXT NOT NULL REFERENCES batches(batch_id),
+  node_type TEXT NOT NULL,
+  actor_wallet TEXT NOT NULL, actor_name TEXT,
+  latitude DECIMAL, longitude DECIMAL, location_name TEXT,
+  notes TEXT, photo_url TEXT, tx_hash TEXT, block_number INTEGER,
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE batches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all" ON users FOR ALL USING (true);
+CREATE POLICY "Allow all" ON batches FOR ALL USING (true);
+CREATE POLICY "Allow all" ON events FOR ALL USING (true);</pre>
+    <div class="tip-box">✅ You should see: "Success. No rows returned" — tables created!</div>
+    <button class="mark-done-btn" onclick="markDone(5)">✓ Mark as Done</button>
+  </div>
+
+  <div class="step-section" id="step-6">
+    <div class="step-header"><div class="step-num">7</div><div>
+      <div class="step-title">Copy Your Supabase API Keys</div>
+      <div class="step-desc">You'll need these 3 values for the .env file</div>
+    </div></div>
+    <ol>
+      <li>In Supabase → click <strong>⚙️ Settings</strong> (bottom left) → <strong>API</strong></li>
+      <li>Copy and save these 3 values:</li>
+    </ol>
+    <div class="grid2">
+      <div class="mini-card"><div class="mc-icon">🌐</div><div class="mc-title">Project URL</div><div class="mc-sub">https://abcxyz.supabase.co</div><div class="mc-env">SUPABASE_URL=</div></div>
+      <div class="mini-card"><div class="mc-icon">🔓</div><div class="mc-title">anon public key</div><div class="mc-sub">Long string starting with eyJ...</div><div class="mc-env">SUPABASE_ANON_KEY=</div></div>
+      <div class="mini-card"><div class="mc-icon">🔐</div><div class="mc-title">service_role key</div><div class="mc-sub">Long string starting with eyJ... (SECRET!)</div><div class="mc-env">SUPABASE_SERVICE_KEY=</div></div>
+    </div>
+    <div class="warn-box">⚠️ Never put the <strong>service_role</strong> key in your frontend or GitHub repo. Backend only.</div>
+    <button class="mark-done-btn" onclick="markDone(6)">✓ Mark as Done</button>
+  </div>
+
+  <div class="nav-btns">
+    <button class="nav-btn nav-prev" onclick="showPhase(0,document.querySelectorAll('.phase-tab')[0])">← Back</button>
+    <button class="nav-btn nav-next" onclick="showPhase(2,document.querySelectorAll('.phase-tab')[2])">Next: Alchemy →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PHASE 2 — ALCHEMY
+════════════════════════════════════════════ -->
+<div class="phase-panel" id="phase-2">
+
+  <div class="step-section" id="step-7">
+    <div class="step-header"><div class="step-num">8</div><div>
+      <div class="step-title">Create Alchemy Account & Get RPC URL</div>
+      <div class="step-desc">Free blockchain node — lets your app connect to Polygon</div>
+    </div></div>
+    <div class="info-box">🔗 Go to: <strong>dashboard.alchemy.com</strong> → Sign up free</div>
+    <ol>
+      <li>After login → click <strong>"Create new app"</strong></li>
+      <li>Name: <code>AyurTrace</code> · Network: <strong>Polygon Amoy</strong></li>
+      <li>Click <strong>"Create app"</strong></li>
+      <li>Click your new app → click <strong>"API Key"</strong></li>
+      <li>Copy the <strong>HTTPS URL</strong>:<br><code>https://polygon-amoy.g.alchemy.com/v2/yourkey...</code></li>
+    </ol>
+    <div class="tip-box">💡 This URL is your <strong>ALCHEMY_RPC_URL</strong> — used in both blockchain/.env and backend/.env</div>
+    <button class="mark-done-btn" onclick="markDone(7)">✓ Mark as Done</button>
+  </div>
+
+  <div class="nav-btns">
+    <button class="nav-btn nav-prev" onclick="showPhase(1,document.querySelectorAll('.phase-tab')[1])">← Back</button>
+    <button class="nav-btn nav-next" onclick="showPhase(3,document.querySelectorAll('.phase-tab')[3])">Next: MetaMask →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PHASE 3 — METAMASK
+════════════════════════════════════════════ -->
+<div class="phase-panel" id="phase-3">
+
+  <div class="step-section" id="step-8">
+    <div class="step-header"><div class="step-num">9</div><div>
+      <div class="step-title">Install MetaMask & Create Wallet</div>
+      <div class="step-desc">Browser wallet for signing blockchain transactions</div>
+    </div></div>
+    <div class="info-box">🔗 Go to: <strong>metamask.io</strong> → Install browser extension (use Chrome)</div>
+    <ol>
+      <li>Click <strong>"Install MetaMask for Chrome"</strong> → "Add to Chrome"</li>
+      <li>Click MetaMask icon in browser toolbar → <strong>"Create a new wallet"</strong></li>
+      <li>Set a password (for this browser)</li>
+      <li>⭐ <strong>Write down your 12-word Secret Recovery Phrase on paper</strong> → store safely</li>
+      <li>Confirm phrase → wallet created!</li>
+    </ol>
+    <div class="warn-box">⚠️ Never share your Secret Recovery Phrase. Anyone with it can take your funds.</div>
+    <button class="mark-done-btn" onclick="markDone(8)">✓ Mark as Done</button>
+  </div>
+
+  <div class="step-section" id="step-9">
+    <div class="step-header"><div class="step-num">10</div><div>
+      <div class="step-title">Add Polygon Amoy Network to MetaMask</div>
+      <div class="step-desc">The free test blockchain for your project</div>
+    </div></div>
+    <ol>
+      <li>In MetaMask → click the network dropdown at the top → <strong>"Add network"</strong></li>
+      <li>Click <strong>"Add a network manually"</strong></li>
+      <li>Fill in <em>exactly</em>:</li>
+    </ol>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button>Network name:      Polygon Amoy
+RPC URL:           https://rpc-amoy.polygon.technology
+Chain ID:          80002
+Symbol:            MATIC
+Block explorer:    https://amoy.polygonscan.com</pre>
+    <ol start="4"><li>Click <strong>Save</strong> → <strong>Switch to Polygon Amoy</strong></li></ol>
+    <button class="mark-done-btn" onclick="markDone(9)">✓ Mark as Done</button>
+  </div>
+
+  <div class="step-section" id="step-10">
+    <div class="step-header"><div class="step-num">11</div><div>
+      <div class="step-title">Get Free Test MATIC from Faucet</div>
+      <div class="step-desc">Needed to pay blockchain gas fees (free test money)</div>
+    </div></div>
+    <ol>
+      <li>Copy your wallet address from MetaMask (click account name at top)</li>
+      <li>Go to: <strong>faucet.polygon.technology</strong></li>
+      <li>Select <strong>Amoy</strong> network → paste your wallet address → Submit</li>
+      <li>Wait ~1 minute → check MetaMask, should show 0.2 MATIC</li>
+    </ol>
+    <div class="tip-box">💡 If the faucet is slow, try: <strong>alchemy.com/faucets/polygon-amoy</strong> (free, just needs Alchemy login)</div>
+    <button class="mark-done-btn" onclick="markDone(10)">✓ Mark as Done</button>
+  </div>
+
+  <div class="step-section" id="step-11">
+    <div class="step-header"><div class="step-num">12</div><div>
+      <div class="step-title">Export Your Private Key</div>
+      <div class="step-desc">Needed to deploy the smart contract</div>
+    </div></div>
+    <div class="warn-box">⚠️ Only do this for a <strong>new test wallet</strong> — never export private keys of wallets with real money.</div>
+    <ol>
+      <li>In MetaMask → click the three dots (⋮) next to your account → <strong>"Account details"</strong></li>
+      <li>Click <strong>"Show private key"</strong> → enter your password</li>
+      <li>Copy the long string → this is your <strong>DEPLOYER_PRIVATE_KEY</strong></li>
+    </ol>
+    <button class="mark-done-btn" onclick="markDone(11)">✓ Mark as Done</button>
+  </div>
+
+  <div class="nav-btns">
+    <button class="nav-btn nav-prev" onclick="showPhase(2,document.querySelectorAll('.phase-tab')[2])">← Back</button>
+    <button class="nav-btn nav-next" onclick="showPhase(4,document.querySelectorAll('.phase-tab')[4])">Next: Install & .env →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PHASE 4 — INSTALL & ENV
+════════════════════════════════════════════ -->
+<div class="phase-panel" id="phase-4">
+
+  <div class="step-section" id="step-12">
+    <div class="step-header"><div class="step-num">13</div><div>
+      <div class="step-title">Install All Dependencies (npm install)</div>
+      <div class="step-desc">Download all packages for all 3 parts of the project</div>
+    </div></div>
+    <p>Open your terminal, <code>cd</code> into the <code>ayurtrace</code> folder, then run these <strong>one by one</strong>:</p>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><span class="cmd-comment"># Step 1: blockchain packages</span>
+cd blockchain
+npm install
+
+<span class="cmd-comment"># Step 2: backend packages</span>
+cd ../backend
+npm install
+
+<span class="cmd-comment"># Step 3: frontend packages</span>
+cd ../frontend
+npm install</pre>
+    <div class="warn-box">⚠️ Each install takes 1–3 minutes. Lots of text is normal. Wait for each to finish before the next.</div>
+    <div class="tip-box">✅ Done when you see: <code>added XXX packages in Xs</code></div>
+    <button class="mark-done-btn" onclick="markDone(12)">✓ Mark as Done</button>
+  </div>
+
+  <div class="step-section" id="step-13">
+    <div class="step-header"><div class="step-num">14</div><div>
+      <div class="step-title">Create the .env Files</div>
+      <div class="step-desc">Add your keys — the app won't run without these</div>
+    </div></div>
+    <div class="info-box">💡 In VS Code: right-click the folder in the sidebar → <strong>New File</strong> → type <strong>.env</strong></div>
+
+    <h3>📄 File 1: <code>blockchain/.env</code></h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button>ALCHEMY_RPC_URL=<span class="cmd-hl">YOUR_ALCHEMY_HTTPS_URL</span>
+DEPLOYER_PRIVATE_KEY=<span class="cmd-hl">YOUR_METAMASK_PRIVATE_KEY</span></pre>
+
+    <h3>📄 File 2: <code>backend/.env</code></h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button>PORT=5000
+NODE_ENV=development
+SUPABASE_URL=<span class="cmd-hl">YOUR_SUPABASE_PROJECT_URL</span>
+SUPABASE_ANON_KEY=<span class="cmd-hl">YOUR_SUPABASE_ANON_KEY</span>
+SUPABASE_SERVICE_KEY=<span class="cmd-hl">YOUR_SUPABASE_SERVICE_ROLE_KEY</span>
+ALCHEMY_RPC_URL=<span class="cmd-hl">YOUR_ALCHEMY_HTTPS_URL</span>
+CONTRACT_ADDRESS=<span class="cmd-hl">FILL_AFTER_DEPLOY</span>
+JWT_SECRET=ayurtrace_super_secret_key_change_me_12345
+FRONTEND_URL=http://localhost:5173</pre>
+
+    <h3>📄 File 3: <code>frontend/.env</code></h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button>VITE_API_URL=http://localhost:5000
+VITE_CONTRACT_ADDRESS=<span class="cmd-hl">FILL_AFTER_DEPLOY</span>
+VITE_CHAIN_ID=80002</pre>
+
+    <div class="warn-box">⚠️ The <code>CONTRACT_ADDRESS</code> and <code>VITE_CONTRACT_ADDRESS</code> will be filled in the next step after you deploy the contract.</div>
+    <button class="mark-done-btn" onclick="markDone(13)">✓ Mark as Done</button>
+  </div>
+
+  <div class="nav-btns">
+    <button class="nav-btn nav-prev" onclick="showPhase(3,document.querySelectorAll('.phase-tab')[3])">← Back</button>
+    <button class="nav-btn nav-next" onclick="showPhase(5,document.querySelectorAll('.phase-tab')[5])">Next: Smart Contract →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PHASE 5 — SMART CONTRACT
+════════════════════════════════════════════ -->
+<div class="phase-panel" id="phase-5">
+
+  <div class="step-section" id="step-14">
+    <div class="step-header"><div class="step-num">15</div><div>
+      <div class="step-title">Compile & Test the Smart Contract</div>
+      <div class="step-desc">Make sure everything compiles and all tests pass</div>
+    </div></div>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button">cd blockchain
+
+<span class="cmd-comment"># Compile Solidity code</span>
+npx hardhat compile
+
+<span class="cmd-comment"># Run all tests</span>
+npx hardhat test</pre>
+    <div class="tip-box">✅ You should see green checkmarks and <strong>"15 passing"</strong> — all tests passed!</div>
+    <div class="warn-box">If you see errors: make sure you ran <code>npm install</code> inside the <code>blockchain/</code> folder.</div>
+    <button class="mark-done-btn" onclick="markDone(14)">✓ Mark as Done</button>
+  </div>
+
+  <div class="step-section" id="step-15">
+    <div class="step-header"><div class="step-num">16</div><div>
+      <div class="step-title">Deploy the Smart Contract</div>
+      <div class="step-desc">Push the contract to the blockchain and get your contract address</div>
+    </div></div>
+
+    <h3>Option A — Local (easiest, for development)</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button"><span class="cmd-comment"># Terminal 1: start local blockchain (keep running)</span>
+npx hardhat node
+
+<span class="cmd-comment"># Terminal 2: deploy to it</span>
+npx hardhat run scripts/deploy.js --network localhost</pre>
+
+    <h3>Option B — Polygon Amoy (for live demo)</h3>
+    <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button">npx hardhat run scripts/deploy.js --network amoy</pre>
+
+    <div class="warn-box">
+      📋 <strong>After deploy, the terminal will print something like:</strong><br>
+      <code>✅ HerbTrace deployed to: 0xAbCd1234...</code><br><br>
+      <strong>Copy that address</strong> and paste it into:<br>
+      • <code>backend/.env</code> → <code>CONTRACT_ADDRESS=0xAbCd1234...</code><br>
+      • <code>frontend/.env</code> → <code>VITE_CONTRACT_ADDRESS=0xAbCd1234...</code>
+    </div>
+    <button class="mark-done-btn" onclick="markDone(15)">✓ Mark as Done</button>
+  </div>
+
+  <div class="nav-btns">
+    <button class="nav-btn nav-prev" onclick="showPhase(4,document.querySelectorAll('.phase-tab')[4])">← Back</button>
+    <button class="nav-btn nav-next" onclick="showPhase(6,document.querySelectorAll('.phase-tab')[6])">Next: Run Locally →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PHASE 6 — RUN LOCALLY
+════════════════════════════════════════════ -->
+<div class="phase-panel" id="phase-6">
+
+  <div class="step-section" id="step-16">
+    <div class="step-header"><div class="step-num">17</div><div>
+      <div class="step-title">Run All 3 Servers at Once</div>
+      <div class="step-desc">Open 3 terminals — one command each, keep all running</div>
+    </div></div>
+    <div class="info-box">💡 In VS Code press <strong>Ctrl+Shift+5</strong> to split terminal into 3 panes.</div>
+    <div class="terminal-split">
+      <div class="terminal-box">
+        <div class="terminal-title">TERMINAL 1</div>
+        <div class="terminal-body">cd blockchain<br><br>npx hardhat node<br><br><span style="color:#4ade80;opacity:.5"># Local blockchain<br># Port 8545<br># Keep running</span></div>
+      </div>
+      <div class="terminal-box">
+        <div class="terminal-title">TERMINAL 2</div>
+        <div class="terminal-body">cd backend<br><br>npm run dev<br><br><span style="color:#4ade80;opacity:.5"># API server<br># Port 5000<br># Keep running</span></div>
+      </div>
+      <div class="terminal-box">
+        <div class="terminal-title">TERMINAL 3</div>
+        <div class="terminal-body">cd frontend<br><br>npm run dev<br><br><span style="color:#4ade80;opacity:.5"># React app<br># Port 5173<br># Keep running</span></div>
+      </div>
+    </div>
+    <div class="tip-box">🎉 Open <strong>http://localhost:5173</strong> in your browser — you should see the AyurTrace homepage!</div>
+    <button class="mark-done-btn" onclick="markDone(16)">✓ Mark as Done</button>
+  </div>
+
+  <div class="nav-btns">
+    <button class="nav-btn nav-prev" onclick="showPhase(5,document.querySelectorAll('.phase-tab')[5])">← Back</button>
+    <button class="nav-btn nav-next" onclick="showPhase(7,document.querySelectorAll('.phase-tab')[7])">Next: Test the App →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PHASE 7 — TEST
+════════════════════════════════════════════ -->
+<div class="phase-panel" id="phase-7">
+
+  <div class="step-section" id="step-17">
+    <div class="step-header"><div class="step-num">18</div><div>
+      <div class="step-title">Test the Complete Herb Journey</div>
+      <div class="step-desc">Walk through every role from collector to QR scan</div>
+    </div></div>
+
+    <h3>👤 Register 5 Accounts (use MetaMask "Add Account" for each)</h3>
+    <table>
+      <tr><th>Account</th><th>Role to Register</th><th>What they do</th></tr>
+      <tr><td>Account 1</td><td>Admin</td><td>See admin dashboard</td></tr>
+      <tr><td>Account 2</td><td>Collector</td><td>Log new herb batch</td></tr>
+      <tr><td>Account 3</td><td>Aggregator</td><td>Accept & grade batch</td></tr>
+      <tr><td>Account 4</td><td>Processor</td><td>Log processing</td></tr>
+      <tr><td>Account 5</td><td>Manufacturer</td><td>Add formulation record</td></tr>
+    </table>
+
+    <h3>🌿 Full Test Flow</h3>
+    <ol>
+      <li><strong>Register</strong> → go to <code>localhost:5173</code> → click Register → connect MetaMask → pick role</li>
+      <li><strong>As Collector</strong>: Click "Collect Herb" → select Ashwagandha → enter 5 kg → click "Capture GPS" → add notes → Submit → Confirm in MetaMask</li>
+      <li>You get a <strong>success screen with QR code</strong> and a Batch ID — copy it</li>
+      <li><strong>Switch MetaMask to Account 3</strong> → open incognito window → Register as Aggregator → Log Event → select the batch → add notes → Submit</li>
+      <li>Repeat for <strong>Processor</strong> (Account 4) and <strong>Manufacturer</strong> (Account 5)</li>
+      <li><strong>Scan/open QR</strong>: go to <code>localhost:5173/verify/YOUR-BATCH-ID</code></li>
+      <li>✅ You should see the full journey with GPS map and all 5 node records!</li>
+    </ol>
+
+    <div class="tip-box">🎉 If the verify page shows all 4–5 steps with the map — your project is working perfectly! This is exactly what you demo at your viva.</div>
+    <button class="mark-done-btn" onclick="markDone(17)">✓ Mark as Done</button>
+  </div>
+
+  <div class="nav-btns">
+    <button class="nav-btn nav-prev" onclick="showPhase(6,document.querySelectorAll('.phase-tab')[6])">← Back</button>
+    <button class="nav-btn nav-next" onclick="showPhase(8,document.querySelectorAll('.phase-tab')[8])">Next: Deploy Live →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PHASE 8 — DEPLOY LIVE
+════════════════════════════════════════════ -->
+<div class="phase-panel" id="phase-8">
+
+  <div class="step-section">
+    <div class="step-header"><div class="step-num">🌍</div><div>
+      <div class="step-title">Deploy Frontend → Vercel (Free)</div>
+    </div></div>
+    <ol>
+      <li>Push project to GitHub: <strong>github.com</strong> → New repo → upload <code>ayurtrace/</code> folder</li>
+      <li>Go to <strong>vercel.com</strong> → Sign up with GitHub → "New Project"</li>
+      <li>Import your GitHub repo → set <strong>Root Directory = frontend</strong></li>
+      <li>Add Environment Variables (from your frontend/.env)</li>
+      <li>Click <strong>Deploy</strong> → get URL like <code>ayurtrace.vercel.app</code></li>
+    </ol>
+  </div>
+
+  <div class="step-section">
+    <div class="step-header"><div class="step-num">🌍</div><div>
+      <div class="step-title">Deploy Backend → Render.com (Free)</div>
+    </div></div>
+    <ol>
+      <li>Go to <strong>render.com</strong> → Sign up with GitHub → "New Web Service"</li>
+      <li>Connect your GitHub repo → set <strong>Root Directory = backend</strong></li>
+      <li>Build command: <code>npm install</code> · Start command: <code>npm start</code></li>
+      <li>Add all backend .env variables in the Environment tab</li>
+      <li>Click <strong>Deploy</strong> → get URL like <code>ayurtrace-api.onrender.com</code></li>
+      <li>Update frontend/.env: <code>VITE_API_URL=https://ayurtrace-api.onrender.com</code></li>
+      <li>Redeploy frontend on Vercel</li>
+    </ol>
+    <div class="warn-box">⚠️ Render free tier sleeps after 15 min.<br>Fix: go to <strong>uptimerobot.com</strong> (free) → Monitor your Render URL every 5 min → backend stays awake!</div>
+  </div>
+
+  <div class="step-section">
+    <div class="step-header"><div class="step-num">🆘</div><div>
+      <div class="step-title">Common Errors & Fixes</div>
+    </div></div>
+    <table>
+      <tr><th>Error</th><th>Fix</th></tr>
+      <tr><td><code>MetaMask not found</code></td><td>Install MetaMask extension and refresh page</td></tr>
+      <tr><td><code>CORS error</code></td><td>Make sure backend is running on port 5000</td></tr>
+      <tr><td><code>Supabase 401</code></td><td>Check SUPABASE_SERVICE_KEY in backend/.env</td></tr>
+      <tr><td><code>Contract not found</code></td><td>Re-run deploy, update CONTRACT_ADDRESS in both .env files</td></tr>
+      <tr><td><code>GPS not working</code></td><td>Use localhost or HTTPS. Allow location permission in browser.</td></tr>
+      <tr><td><code>npm install fails</code></td><td>Delete node_modules folder → run npm install again</td></tr>
+      <tr><td><code>Transaction failed</code></td><td>Get more test MATIC from faucet. Check you're on Polygon Amoy.</td></tr>
+      <tr><td><code>Port already in use</code></td><td>Kill old processes: <code>npx kill-port 5000</code> or <code>npx kill-port 5173</code></td></tr>
+    </table>
+  </div>
+
+  <div class="nav-btns">
+    <button class="nav-btn nav-prev" onclick="showPhase(7,document.querySelectorAll('.phase-tab')[7])">← Back</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+const TOTAL = 18;
+const done = new Set(JSON.parse(localStorage.getItem('ayurtrace-guide') || '[]'));
+const STEPS = [
+  {t:'Install Node.js',s:'Prerequisites',p:0},{t:'Install Git',s:'Prerequisites',p:0},
+  {t:'Install VS Code',s:'Prerequisites',p:0},{t:'Extract Project',s:'Prerequisites',p:0},
+  {t:'Create Supabase Project',s:'Database',p:1},{t:'Create DB Tables',s:'Database',p:1},
+  {t:'Copy API Keys',s:'Database',p:1},{t:'Alchemy RPC URL',s:'Blockchain',p:2},
+  {t:'Install MetaMask',s:'Wallet',p:3},{t:'Add Polygon Amoy',s:'Wallet',p:3},
+  {t:'Get Test MATIC',s:'Wallet',p:3},{t:'Export Private Key',s:'Wallet',p:3},
+  {t:'npm install (all)',s:'Setup',p:4},{t:'Create .env files',s:'Setup',p:4},
+  {t:'Compile & Test',s:'Contract',p:5},{t:'Deploy Contract',s:'Contract',p:5},
+  {t:'Run 3 Servers',s:'Local Run',p:6},{t:'Test Full Flow',s:'Testing',p:7},
+];
+
+function buildSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = '';
+  STEPS.forEach((s,i) => {
+    const d = document.createElement('div');
+    d.className = 'sidebar-step' + (done.has(i) ? ' done' : '');
+    d.id = 'sb-'+i;
+    d.onclick = () => { showPhase(s.p, document.querySelectorAll('.phase-tab')[s.p]); setTimeout(()=>{ const el=document.getElementById('step-'+i); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },150); };
+    d.innerHTML = `<div class="step-circle">${done.has(i)?'✓':i+1}</div><div><div class="step-text">${s.t}</div><div class="step-sub">${s.s}</div></div>`;
+    sb.appendChild(d);
+  });
+}
+
+function updateProgress() {
+  const pct = Math.round((done.size/TOTAL)*100);
+  document.getElementById('progress').style.width = pct+'%';
+  document.getElementById('progress-label').textContent = `${done.size} of ${TOTAL} steps completed (${pct}%)`;
+  localStorage.setItem('ayurtrace-guide', JSON.stringify([...done]));
+}
+
+function markDone(i) {
+  done.add(i);
+  const s = document.getElementById('step-'+i);
+  if(s) s.classList.add('done');
+  buildSidebar(); updateProgress();
+}
+
+function showPhase(idx, btn) {
+  document.querySelectorAll('.phase-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.phase-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('phase-'+idx).classList.add('active');
+  if(btn) btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function copyCode(btn) {
+  const pre = btn.parentElement;
+  const text = pre.innerText.replace(/^(Copy|Copied!)\n/,'');
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='Copied!'; btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent='Copy'; btn.classList.remove('copied'); },2000);
+  });
+}
+
+// Init
+buildSidebar(); updateProgress();
+done.forEach(i=>{ const s=document.getElementById('step-'+i); if(s) s.classList.add('done'); });
+</script>
+</body>
+</html>
